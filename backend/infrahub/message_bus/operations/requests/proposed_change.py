@@ -30,10 +30,18 @@ from infrahub.message_bus.types import (
     ProposedChangeRepository,
     ProposedChangeSubscriber,
 )
-from infrahub.proposed_change.models import RequestProposedChangeDataIntegrity, RequestProposedChangeRunGenerators
+from infrahub.proposed_change.models import (
+    RequestProposedChangeDataIntegrity,
+    RequestProposedChangeRepositoryChecks,
+    RequestProposedChangeRunGenerators,
+)
 from infrahub.pytest_plugin import InfrahubBackendPlugin
 from infrahub.services import InfrahubServices  # noqa: TCH001
-from infrahub.workflows.catalogue import REQUEST_PROPOSED_CHANGE_DATA_INTEGRITY, REQUEST_PROPOSED_CHANGE_RUN_GENERATORS
+from infrahub.workflows.catalogue import (
+    REQUEST_PROPOSED_CHANGE_DATA_INTEGRITY,
+    REQUEST_PROPOSED_CHANGE_REPOSITORY_CHECKS,
+    REQUEST_PROPOSED_CHANGE_RUN_GENERATORS,
+)
 
 if TYPE_CHECKING:
     from infrahub_sdk.node import InfrahubNode
@@ -145,14 +153,15 @@ async def pipeline(message: messages.RequestProposedChangePipeline, service: Inf
         )
 
     if message.check_type in [CheckType.REPOSITORY, CheckType.USER]:
-        events.append(
-            messages.RequestProposedChangeRepositoryChecks(
-                proposed_change=message.proposed_change,
-                source_branch=message.source_branch,
-                source_branch_sync_with_git=message.source_branch_sync_with_git,
-                destination_branch=message.destination_branch,
-                branch_diff=branch_diff,
-            )
+        model_proposed_change_repo_checks = RequestProposedChangeRepositoryChecks(
+            proposed_change=message.proposed_change,
+            source_branch=message.source_branch,
+            source_branch_sync_with_git=message.source_branch_sync_with_git,
+            destination_branch=message.destination_branch,
+            branch_diff=branch_diff,
+        )
+        await service.workflow.submit_workflow(
+            workflow=REQUEST_PROPOSED_CHANGE_REPOSITORY_CHECKS, parameters={"model": model_proposed_change_repo_checks}
         )
 
     if message.check_type in [CheckType.ALL, CheckType.SCHEMA] and branch_diff.has_data_changes(
@@ -247,40 +256,6 @@ async def schema_integrity(
         await object_conflict_validator_recorder.record_conflicts(
             proposed_change_id=message.proposed_change, conflicts=conflicts
         )
-
-
-@flow(name="proposed-changed-repository-check")
-async def repository_checks(message: messages.RequestProposedChangeRepositoryChecks, service: InfrahubServices) -> None:
-    log.info(f"Got a request to process checks defined in proposed_change: {message.proposed_change}")
-    events: list[InfrahubMessage] = []
-    for repository in message.branch_diff.repositories:
-        if (
-            message.source_branch_sync_with_git
-            and not repository.read_only
-            and repository.internal_status == RepositoryInternalStatus.ACTIVE.value
-        ):
-            events.append(
-                messages.RequestRepositoryChecks(
-                    proposed_change=message.proposed_change,
-                    repository=repository.repository_id,
-                    source_branch=message.source_branch,
-                    target_branch=message.destination_branch,
-                )
-            )
-
-        events.append(
-            messages.RequestRepositoryUserChecks(
-                proposed_change=message.proposed_change,
-                repository=repository.repository_id,
-                source_branch=message.source_branch,
-                source_branch_sync_with_git=message.source_branch_sync_with_git,
-                target_branch=message.destination_branch,
-                branch_diff=message.branch_diff,
-            )
-        )
-    for event in events:
-        event.assign_meta(parent=message)
-        await service.send(message=event)
 
 
 @flow(

@@ -152,15 +152,15 @@ async def test_run_pipeline_validate_requested_jobs(
 
         assert sorted(bus_pre_data_changes.seen_routing_keys) == [
             "request.proposed_change.refresh_artifacts",
-            "request.proposed_change.repository_checks",
             "request.proposed_change.run_tests",
+            "request.repository.user_checks",
         ]
 
         assert sorted(bus_post_data_changes.seen_routing_keys) == [
             "request.proposed_change.refresh_artifacts",
-            "request.proposed_change.repository_checks",
             "request.proposed_change.run_tests",
             "request.proposed_change.schema_integrity",
+            "request.repository.user_checks",
         ]
 
 
@@ -189,5 +189,4 @@ async def test_run_generators_validate_requested_jobs(
 
     assert sorted(bus.seen_routing_keys) == [
         "request.proposed_change.refresh_artifacts",
-        "request.proposed_change.repository_checks",
     ]

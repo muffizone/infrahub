@@ -42,9 +42,9 @@ query {
 }
 """
 
-IPAM_IP_NAMESPACE_QUERY = """
+REPOSITORY_QUERY = """
 query {
-  BuiltinIPNamespace {
+  CoreGenericRepository {
     permissions {
         count
         edges {
@@ -62,9 +62,9 @@ query {
 """
 
 
-QUERY_IP_PREFIX_POOL = """
+QUERY_ACCOUNT_ROLE = """
 query {
-  CoreIPPrefixPool {
+  CoreAccountRole {
     edges {
         node {
             display_label
@@ -128,18 +128,6 @@ class TestObjectPermissions:
             ),
             ObjectPermission(
                 namespace="Core",
-                name="*",
-                action=PermissionAction.VIEW.value,
-                decision=PermissionDecisionFlag.ALLOW_ALL,
-            ),
-            ObjectPermission(
-                namespace="Ipam",
-                name="*",
-                action=PermissionAction.ANY.value,
-                decision=PermissionDecisionFlag.ALLOW_OTHER,
-            ),
-            ObjectPermission(
-                namespace="Ipam",
                 name="*",
                 action=PermissionAction.VIEW.value,
                 decision=PermissionDecisionFlag.ALLOW_ALL,
@@ -227,33 +215,42 @@ class TestObjectPermissions:
 
         result = await graphql(
             schema=gql_params.schema,
-            source=IPAM_IP_NAMESPACE_QUERY,
+            source=REPOSITORY_QUERY,
             context_value=gql_params.context,
         )
 
         assert not result.errors
         assert result.data
-        assert result.data["BuiltinIPNamespace"]["permissions"]["count"] == 2
+        assert result.data["CoreGenericRepository"]["permissions"]["count"] == 3
         assert {
             "node": {
-                "kind": "BuiltinIPNamespace",
-                "create": BranchRelativePermissionDecision.ALLOW_OTHER.name,
-                "update": BranchRelativePermissionDecision.DENY.name,
-                "delete": BranchRelativePermissionDecision.ALLOW_OTHER.name,
-                "view": BranchRelativePermissionDecision.ALLOW.name,
-            }
-        } in result.data["BuiltinIPNamespace"]["permissions"]["edges"]
-        assert {
-            "node": {
-                "kind": "IpamNamespace",
+                "kind": "CoreGenericRepository",
                 "create": BranchRelativePermissionDecision.ALLOW_OTHER.name,
                 "update": BranchRelativePermissionDecision.ALLOW_OTHER.name,
                 "delete": BranchRelativePermissionDecision.ALLOW_OTHER.name,
                 "view": BranchRelativePermissionDecision.ALLOW.name,
             }
-        } in result.data["BuiltinIPNamespace"]["permissions"]["edges"]
+        } in result.data["CoreGenericRepository"]["permissions"]["edges"]
+        assert {
+            "node": {
+                "kind": "CoreRepository",
+                "create": BranchRelativePermissionDecision.ALLOW_OTHER.name,
+                "update": BranchRelativePermissionDecision.ALLOW_OTHER.name,
+                "delete": BranchRelativePermissionDecision.ALLOW_OTHER.name,
+                "view": BranchRelativePermissionDecision.ALLOW.name,
+            }
+        } in result.data["CoreGenericRepository"]["permissions"]["edges"]
+        assert {
+            "node": {
+                "kind": "CoreReadOnlyRepository",
+                "create": BranchRelativePermissionDecision.ALLOW_OTHER.name,
+                "update": BranchRelativePermissionDecision.ALLOW_OTHER.name,
+                "delete": BranchRelativePermissionDecision.ALLOW_OTHER.name,
+                "view": BranchRelativePermissionDecision.ALLOW.name,
+            }
+        } in result.data["CoreGenericRepository"]["permissions"]["edges"]
 
-    async def test_first_account_ipprefix_pool(
+    async def test_first_account_account_role(
         self, db: InfrahubDatabase, permissions_helper: PermissionsHelper
     ) -> None:
         """In the main branch the first account doesn't have the permission to make changes, but it has in the other branches"""
@@ -264,20 +261,21 @@ class TestObjectPermissions:
             db=db, include_mutation=True, branch=permissions_helper.default_branch, account_session=session
         )
 
-        result = await graphql(schema=gql_params.schema, source=QUERY_IP_PREFIX_POOL, context_value=gql_params.context)
+        result = await graphql(schema=gql_params.schema, source=QUERY_ACCOUNT_ROLE, context_value=gql_params.context)
 
         assert not result.errors
         assert result.data
-        assert result.data["CoreIPPrefixPool"]["permissions"]["count"] == 1
-        assert result.data["CoreIPPrefixPool"]["permissions"]["edges"][0] == {
+        assert result.data["CoreAccountRole"]["permissions"]["count"] == 1
+        assert result.data["CoreAccountRole"]["permissions"]["edges"][0] == {
             "node": {
-                "kind": "CoreIPPrefixPool",
+                "kind": "CoreAccountRole",
                 "create": BranchRelativePermissionDecision.ALLOW_OTHER.name,
                 "update": BranchRelativePermissionDecision.ALLOW_OTHER.name,
                 "delete": BranchRelativePermissionDecision.ALLOW_OTHER.name,
                 "view": BranchRelativePermissionDecision.ALLOW.name,
             }
         }
+        assert result.data["CoreAccountRole"]["edges"][0]["node"]["display_label"] == "admin"
 
 
 QUERY_TAGS_ATTR = """

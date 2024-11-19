@@ -11,7 +11,6 @@ from ..auth.query_permission_checker.object_permission_checker import (
     AccountManagerPermissionChecker,
     ObjectPermissionChecker,
     PermissionManagerPermissionChecker,
-    RepositoryManagerPermissionChecker,
 )
 from ..auth.query_permission_checker.read_only_checker import ReadOnlyGraphQLPermissionChecker
 from ..auth.query_permission_checker.read_write_checker import ReadWriteGraphQLPermissionChecker
@@ -31,7 +30,6 @@ def build_graphql_query_permission_checker() -> GraphQLQueryPermissionChecker:
             DefaultBranchPermissionChecker(),
             MergeBranchPermissionChecker(),
             AccountManagerPermissionChecker(),
-            RepositoryManagerPermissionChecker(),
             PermissionManagerPermissionChecker(),
             ObjectPermissionChecker(),
             ReadWriteGraphQLPermissionChecker(),  # Deprecated, will be replace by either a global permission or object permissions

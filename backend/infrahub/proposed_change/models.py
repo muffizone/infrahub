@@ -14,3 +14,7 @@ class RequestProposedChangeRunGenerators(BaseProposedChangeWithDiffMessage):
     do_repository_checks: bool = Field(
         ..., description="Whether to run repository and user checks after the generators are run"
     )
+
+
+class RequestProposedChangeRepositoryChecks(BaseProposedChangeWithDiffMessage):
+    """Sent when a proposed change is created to trigger additional checks"""
