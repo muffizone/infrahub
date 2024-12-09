@@ -1,5 +1,5 @@
 import importlib
-from typing import Any, Awaitable, Callable, TypeVar
+from typing import Any, Awaitable, Callable, Optional, TypeVar
 from uuid import UUID
 
 from prefect.client.orchestration import PrefectClient
@@ -42,6 +42,7 @@ class WorkflowDefinition(BaseModel):
     cron: str | None = None
     branch_support: BranchSupportType = BranchSupportType.AGNOSTIC
     tags: list[WorkflowTag] = Field(default_factory=list)
+    concurrency_limit: Optional[int] = None
 
     @property
     def entrypoint(self) -> str:

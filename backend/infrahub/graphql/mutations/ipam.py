@@ -1,4 +1,3 @@
-import ipaddress
 from typing import TYPE_CHECKING, Any, Optional
 
 from graphene import InputObjectType, Mutation
@@ -8,7 +7,6 @@ from typing_extensions import Self
 from infrahub.core import registry
 from infrahub.core.branch import Branch
 from infrahub.core.constants import InfrahubKind
-from infrahub.core.ipam.reconciler import IpamReconciler
 from infrahub.core.manager import NodeManager
 from infrahub.core.node import Node
 from infrahub.core.schema import NodeSchema
@@ -17,6 +15,8 @@ from infrahub.exceptions import NodeNotFoundError, ValidationError
 from infrahub.graphql.mutations.node_getter.interface import MutationNodeGetterInterface
 from infrahub.log import get_logger
 
+from ...core.ipam.model import IpamNodeDetails
+from ...workflows.catalogue import IPAM_RECONCILIATION
 from .main import InfrahubMutationMixin, InfrahubMutationOptions
 
 if TYPE_CHECKING:
@@ -105,17 +105,24 @@ class InfrahubIPAddressMutation(InfrahubMutationMixin, Mutation):
     ) -> tuple[Node, Self]:
         context: GraphqlContext = info.context
         db = database or context.db
-        ip_address = ipaddress.ip_interface(data["address"]["value"])
         namespace_id = await validate_namespace(db=db, data=data)
 
         async with db.start_transaction() as dbt:
             address = await cls.mutate_create_object(data=data, db=dbt, branch=branch, at=at)
-            reconciler = IpamReconciler(db=dbt, branch=branch)
-            reconciled_address = await reconciler.reconcile(
-                ip_value=ip_address, namespace=namespace_id, node_uuid=address.get_id()
+
+            ipam_node_details = IpamNodeDetails(
+                node_uuid=address.get_id(),
+                is_address=True,
+                is_delete=False,
+                namespace_id=namespace_id,
+                ip_value=data["address"]["value"],
+            )
+            reconciled_address = await info.context.service.workflow.execute_workflow(
+                workflow=IPAM_RECONCILIATION,
+                parameters={"branch": branch.name, "ipam_node_details": [ipam_node_details]},
             )
 
-        result = await cls.mutate_create_to_graphql(info=info, db=db, obj=reconciled_address)
+        result = await cls.mutate_create_to_graphql(info=info, db=db, obj=reconciled_address[0])
 
         return reconciled_address, result
 
@@ -147,13 +154,18 @@ class InfrahubIPAddressMutation(InfrahubMutationMixin, Mutation):
         try:
             async with db.start_transaction() as dbt:
                 address = await cls.mutate_update_object(db=dbt, info=info, data=data, branch=branch, obj=address)
-                reconciler = IpamReconciler(db=dbt, branch=branch)
-                ip_address = ipaddress.ip_interface(address.address.value)
-                reconciled_address = await reconciler.reconcile(
-                    ip_value=ip_address, node_uuid=address.get_id(), namespace=namespace_id
+                ipam_node_details = IpamNodeDetails(
+                    node_uuid=address.get_id(),
+                    is_address=True,
+                    is_delete=False,
+                    namespace_id=namespace_id,
+                    ip_value=address.address.value,
                 )
-
-                result = await cls.mutate_update_to_graphql(db=dbt, info=info, obj=reconciled_address)
+                reconciled_address = await info.context.service.workflow.execute_workflow(
+                    workflow=IPAM_RECONCILIATION,
+                    parameters={"branch": branch.name, "ipam_node_details": [ipam_node_details]},
+                )
+                result = await cls.mutate_update_to_graphql(db=dbt, info=info, obj=reconciled_address[0])
         except ValidationError as exc:
             raise ValueError(str(exc)) from exc
 
@@ -220,17 +232,24 @@ class InfrahubIPPrefixMutation(InfrahubMutationMixin, Mutation):
     ) -> tuple[Node, Self]:
         context: GraphqlContext = info.context
         db = database or context.db
-        ip_network = ipaddress.ip_network(data["prefix"]["value"])
         namespace_id = await validate_namespace(db=db, data=data)
 
         async with db.start_transaction() as dbt:
             prefix = await cls.mutate_create_object(data=data, db=dbt, branch=branch, at=at)
-            reconciler = IpamReconciler(db=dbt, branch=branch)
-            reconciled_prefix = await reconciler.reconcile(
-                ip_value=ip_network, namespace=namespace_id, node_uuid=prefix.get_id()
+
+            ipam_node_details = IpamNodeDetails(
+                node_uuid=prefix.get_id(),
+                is_address=False,
+                is_delete=False,
+                namespace_id=namespace_id,
+                ip_value=data["prefix"]["value"],
+            )
+            reconciled_prefix = await info.context.service.workflow.execute_workflow(
+                workflow=IPAM_RECONCILIATION,
+                parameters={"branch": branch.name, "ipam_node_details": [ipam_node_details]},
             )
 
-        result = await cls.mutate_create_to_graphql(info=info, db=db, obj=reconciled_prefix)
+        result = await cls.mutate_create_to_graphql(info=info, db=db, obj=reconciled_prefix[0])
 
         return reconciled_prefix, result
 
@@ -262,10 +281,16 @@ class InfrahubIPPrefixMutation(InfrahubMutationMixin, Mutation):
         try:
             async with db.start_transaction() as dbt:
                 prefix = await cls.mutate_update_object(db=dbt, info=info, data=data, branch=branch, obj=prefix)
-                reconciler = IpamReconciler(db=dbt, branch=branch)
-                ip_network = ipaddress.ip_network(prefix.prefix.value)
-                reconciled_prefix = await reconciler.reconcile(
-                    ip_value=ip_network, node_uuid=prefix.get_id(), namespace=namespace_id
+                ipam_node_details = IpamNodeDetails(
+                    node_uuid=prefix.get_id(),
+                    is_address=False,
+                    is_delete=False,
+                    namespace_id=namespace_id,
+                    ip_value=prefix.prefix.value,
+                )
+                reconciled_prefix = await info.context.service.workflow.execute_workflow(
+                    workflow=IPAM_RECONCILIATION,
+                    parameters={"branch": branch.name, "ipam_node_details": [ipam_node_details]},
                 )
 
                 result = await cls.mutate_update_to_graphql(db=dbt, info=info, obj=reconciled_prefix)
@@ -315,12 +340,18 @@ class InfrahubIPPrefixMutation(InfrahubMutationMixin, Mutation):
         namespace_rels = await prefix.ip_namespace.get_relationships(db=db)
         namespace_id = namespace_rels[0].peer_id
         try:
-            async with context.db.start_transaction() as dbt:
-                reconciler = IpamReconciler(db=dbt, branch=branch)
-                ip_network = ipaddress.ip_network(prefix.prefix.value)
-                reconciled_prefix = await reconciler.reconcile(
-                    ip_value=ip_network, node_uuid=prefix.get_id(), namespace=namespace_id, is_delete=True
-                )
+            ipam_node_details = IpamNodeDetails(
+                node_uuid=prefix.get_id(),
+                is_address=False,
+                is_delete=True,
+                namespace_id=namespace_id,
+                ip_value=prefix.prefix.value,
+            )
+            reconciled_prefix = await info.context.service.workflow.execute_workflow(
+                workflow=IPAM_RECONCILIATION,
+                parameters={"branch": branch.name, "ipam_node_details": [ipam_node_details]},
+            )
+
         except ValidationError as exc:
             raise ValueError(str(exc)) from exc
 

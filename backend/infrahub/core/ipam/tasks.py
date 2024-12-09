@@ -1,5 +1,5 @@
 import ipaddress
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from prefect import flow
 
@@ -8,10 +8,31 @@ from infrahub.core.ipam.reconciler import IpamReconciler
 from infrahub.services import services
 from infrahub.workflows.utils import add_branch_tag
 
+from ...log import get_logger
+from ..node import Node
 from .model import IpamNodeDetails
 
 if TYPE_CHECKING:
     from infrahub.core.ipam.constants import AllIPTypes
+
+log = get_logger()
+
+
+async def _process_ipam_node_detail(
+    ipam_reconciler: IpamReconciler, ipam_node_detail_item: IpamNodeDetails
+) -> Optional[Node]:
+    log.warning(f"Before reconciling {ipam_node_detail_item.ip_value=}")
+    if ipam_node_detail_item.is_address:
+        ip_value: AllIPTypes = ipaddress.ip_interface(ipam_node_detail_item.ip_value)
+    else:
+        ip_value = ipaddress.ip_network(ipam_node_detail_item.ip_value)
+
+    return await ipam_reconciler.reconcile(
+        ip_value=ip_value,
+        namespace=ipam_node_detail_item.namespace_id,
+        node_uuid=ipam_node_detail_item.node_uuid,
+        is_delete=ipam_node_detail_item.is_delete,
+    )
 
 
 @flow(
@@ -20,7 +41,7 @@ if TYPE_CHECKING:
     description="Ensure the IPAM Tree is up to date",
     persist_result=False,
 )
-async def ipam_reconciliation(branch: str, ipam_node_details: list[IpamNodeDetails]) -> None:
+async def ipam_reconciliation(branch: str, ipam_node_details: list[IpamNodeDetails]) -> list[Optional[Node]]:
     service = services.service
     async with service.database.start_session() as db:
         branch_obj = await registry.get_branch(db=db, branch=branch)
@@ -29,14 +50,4 @@ async def ipam_reconciliation(branch: str, ipam_node_details: list[IpamNodeDetai
 
         ipam_reconciler = IpamReconciler(db=db, branch=branch_obj)
 
-        for ipam_node_detail_item in ipam_node_details:
-            if ipam_node_detail_item.is_address:
-                ip_value: AllIPTypes = ipaddress.ip_interface(ipam_node_detail_item.ip_value)
-            else:
-                ip_value = ipaddress.ip_network(ipam_node_detail_item.ip_value)
-            await ipam_reconciler.reconcile(
-                ip_value=ip_value,
-                namespace=ipam_node_detail_item.namespace_id,
-                node_uuid=ipam_node_detail_item.node_uuid,
-                is_delete=ipam_node_detail_item.is_delete,
-            )
+        return [await _process_ipam_node_detail(ipam_reconciler, detail) for detail in ipam_node_details]

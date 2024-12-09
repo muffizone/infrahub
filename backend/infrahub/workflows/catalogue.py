@@ -67,6 +67,7 @@ IPAM_RECONCILIATION = WorkflowDefinition(
     function="ipam_reconciliation",
     branch_support=BranchSupportType.AWARE,
     tags=[WorkflowTag.DATABASE_CHANGE],
+    concurrency_limit=1,
 )
 
 REQUEST_GENERATOR_RUN = WorkflowDefinition(
