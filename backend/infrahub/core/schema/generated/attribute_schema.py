@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional
 
-from pydantic import Field
+from pydantic import Field, BaseModel
 
 from infrahub.core.constants import AllowOverrideType, HashableModelState
 from infrahub.core.models import HashableModel
@@ -13,6 +13,13 @@ from infrahub.core.schema.dropdown import DropdownChoice  # noqa: TC001
 
 if TYPE_CHECKING:
     from infrahub.core.constants import BranchSupportType
+
+class SpecSchema(HashableModel):
+    max_length: Optional[int] = Field(
+        default=None,
+        description="Set a maximum number of characters allowed for a given attribute.",
+        json_schema_extra={"update": "validate_constraint"},
+    )
 
 
 class GeneratedAttributeSchema(HashableModel):
@@ -120,4 +127,9 @@ class GeneratedAttributeSchema(HashableModel):
         description="Mark attribute as deprecated and provide a user-friendly message to display",
         max_length=128,
         json_schema_extra={"update": "allowed"},
+    )
+    spec: Optional[SpecSchema] = Field(
+        default=None,
+        description="Spec",
+        json_schema_extra={"update": "not_applicable"},
     )

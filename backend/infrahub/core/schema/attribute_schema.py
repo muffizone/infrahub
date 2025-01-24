@@ -98,7 +98,7 @@ class AttributeSchema(GeneratedAttributeSchema):
 
     def to_node(self) -> dict[str, Any]:
         fields_to_exclude = {"id", "state", "filters"}
-        fields_to_json = {"computed_attribute"}
+        fields_to_json = {"computed_attribute", "spec"}
         data = self.model_dump(exclude=fields_to_exclude | fields_to_json)
 
         for field_name in fields_to_json:
