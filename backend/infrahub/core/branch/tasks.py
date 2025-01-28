@@ -51,7 +51,7 @@ from .constants import AUTOMATION_NAME_CREATE, AUTOMATION_NAME_REMOVE
 @flow(name="branch-rebase", flow_run_name="Rebase branch {branch}")
 async def rebase_branch(branch: str) -> None:
     service = services.service
-
+    #
     async with service.database.start_session() as db:
         log = get_run_logger()
         await add_branch_tag(branch_name=branch)
