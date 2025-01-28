@@ -200,7 +200,7 @@ class BranchMerger:
         self._merge_at = Timestamp(at)
         await self.diff_merger.merge_graph(at=self._merge_at)
         await self.merge_repositories()
-
+    #
     async def rollback(self) -> None:
         await self.diff_merger.rollback(at=self._merge_at)
 
