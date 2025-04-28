@@ -403,6 +403,9 @@ async def load_schema(
     )
     await service.event.send(event=event)
 
+    print(f"{[rel.identifier for rel in registry.schema.get(name="TestPerson").relationships]=}")
+    print(f"{[rel.identifier for rel in registry.schema.get(name="TestCar").relationships]=}")
+
     return SchemaUpdate(hash=updated_hash, previous_hash=original_hash, diff=result.diff)
 
 

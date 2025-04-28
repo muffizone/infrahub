@@ -3,6 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 import pytest
+
+from infrahub.core.constants import BranchSupportType
+from infrahub.database import InfrahubDatabase
 from infrahub_sdk.exceptions import GraphQLError
 
 from tests.helpers.test_app import TestInfrahubApp
@@ -11,6 +14,103 @@ if TYPE_CHECKING:
     from infrahub_sdk import InfrahubClient
     from infrahub_sdk.node import InfrahubNode
 
+
+@pytest.fixture
+async def schema_1(db: InfrahubDatabase, node_group_schema, data_schema) -> dict:
+    schema: dict[str, Any] = {
+        "version": "1.0",
+        "nodes": [
+            {
+                "name": "Person",
+                "namespace": "Test",
+                "human_friendly_id": ["name__value"],
+                "attributes": [
+                    {
+                        "name": "name",
+                        "kind": "Text",
+                        "unique": True,
+                    },
+                ],
+                "relationships": [
+                    {
+                        "name": "my_car",
+                        "peer": "TestCar",
+                        "cardinality": "one",
+                        "identifier": "car_person_bidir_identifier"
+                    },
+                ],
+            },
+            {
+                "name": "Car",
+                "namespace": "Test",
+                "human_friendly_id": ["name__value"],
+                "attributes": [
+                    {"name": "name", "kind": "Text", "unique": True},
+                ],
+                "relationships": [
+                    {
+                        "name": "my_owner",
+                        "peer": "TestPerson",
+                        "cardinality": "one",
+                        "identifier": "car_person_bidir_identifier"
+                    },
+                ],
+            },
+        ],
+    }
+
+    return schema
+
+
+@pytest.fixture
+async def schema_2(db: InfrahubDatabase, node_group_schema, data_schema) -> dict:
+    schema: dict[str, Any] = {
+        "version": "1.0",
+        "nodes": [
+            {
+                "name": "Person",
+                "namespace": "Test",
+                "human_friendly_id": ["name__value"],
+                "attributes": [
+                    {
+                        "name": "name",
+                        "kind": "Text",
+                        "unique": True,
+                    },
+                ],
+            },
+            {
+                "name": "Car",
+                "namespace": "Test",
+                "human_friendly_id": ["name__value"],
+                "attributes": [
+                    {"name": "name", "kind": "Text", "unique": True},
+                ],
+                "relationships": [
+                    {
+                        "name": "unidirectional_owner",
+                        "peer": "TestPerson",
+                        "cardinality": "one",
+                        "identifier": "__unidirectional_car__"
+                    },
+                ],
+            },
+        ],
+    }
+
+    return schema
+
+class TestTemp(TestInfrahubApp):
+    async def test_load_multiple_schemas(
+        self,
+        client: InfrahubClient,
+        schema_1,
+        schema_2,
+    ) -> None:
+        res1 = await client.schema.load(schemas=[schema_1])
+        res2 = await client.schema.load(schemas=[schema_2])
+
+        assert len(res2.errors) == len(res1.errors) == 0
 
 class TestDeleteAgnosticRel(TestInfrahubApp):
     @pytest.fixture(scope="class")
