@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from infrahub.core.convert_object_type.conversion import InputDataForDestField, InputForDestField
+from infrahub.core.convert_object_type.object_conversion import InputDataForDestField, InputForDestField
 from tests.helpers.test_app import TestInfrahubApp
 
 if TYPE_CHECKING:
