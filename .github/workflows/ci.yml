@@ -175,13 +175,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: "Setup Python environment"
         run: |
           pipx install -f poetry==${{ needs.prepare-environment.outputs.POETRY_VERSION }}
           poetry config virtualenvs.create true --local
-          poetry env use 3.12
+          poetry env use 3.13
 
       - name: Compare package versions
         run: |
@@ -285,7 +285,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.13'
       - name: "Setup git credentials"
         run: "git config --global user.name 'Infrahub' && \
               git config --global user.email 'infrahub@opsmill.com' && \
@@ -295,7 +295,7 @@ jobs:
       - name: "Setup Python environment"
         run: |
           poetry config virtualenvs.create true --local
-          poetry env use 3.12
+          poetry env use 3.13
       - name: "Install dependencies"
         run: "poetry install --no-interaction --no-ansi"
       - name: "Unit Tests"
@@ -338,7 +338,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.13'
       - name: "Setup git credentials"
         run: "git config --global user.name 'Infrahub' && \
               git config --global user.email 'infrahub@opsmill.com' && \
@@ -348,7 +348,7 @@ jobs:
       - name: "Setup Python environment"
         run: |
           poetry config virtualenvs.create true --local
-          poetry env use 3.12
+          poetry env use 3.13
       - name: "Install dependencies"
         run: "poetry install --no-interaction --no-ansi"
       - name: "Mypy Tests"
@@ -384,7 +384,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.13'
       - name: "Setup git credentials"
         run: "git config --global user.name 'Infrahub' && \
               git config --global user.email 'infrahub@opsmill.com' && \
@@ -394,7 +394,7 @@ jobs:
       - name: "Setup Python environment"
         run: |
           poetry config virtualenvs.create true --local
-          poetry env use 3.12
+          poetry env use 3.13
       - name: "Install dependencies"
         run: "poetry install --no-interaction --no-ansi"
       - name: "Mypy Tests"
@@ -433,7 +433,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.13'
       - name: Install tini
         run: "apt-get update && apt-get install -y tini"
       - name: "Setup git credentials"
@@ -456,7 +456,7 @@ jobs:
       - name: "Setup Python environment"
         run: |
           poetry config virtualenvs.create true --local
-          poetry env use 3.12
+          poetry env use 3.13
       - name: "Install dependencies"
         run: "poetry install --no-interaction --no-ansi"
       - name: "Run tests"
@@ -500,7 +500,7 @@ jobs:
   #     - name: Set up Python
   #       uses: actions/setup-python@v5
   #       with:
-  #         python-version: '3.12'
+  #         python-version: '3.13'
   #     - name: "Setup git credentials"
   #       run: "git config --global user.name 'Infrahub' && \
   #             git config --global user.email 'infrahub@opsmill.com' && \
@@ -510,7 +510,7 @@ jobs:
   #     - name: "Setup Python environment"
   #       run: |
   #         poetry config virtualenvs.create true --local
-  #         poetry env use 3.12
+  #         poetry env use 3.13
   #     - name: "Install dependencies"
   #       run: "poetry install --no-interaction --no-ansi"
   #     - name: "Unit Tests"
@@ -533,12 +533,12 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: 3.13
       - name: "Setup environment"
         run: |
           pipx install -f poetry==${{ needs.prepare-environment.outputs.POETRY_VERSION }}
           poetry config virtualenvs.create true --local
-          poetry env use 3.12
+          poetry env use 3.13
           pip install invoke toml
       - name: "Install Package"
         run: "poetry install"
@@ -625,7 +625,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: 3.13
       - name: "Install dependencies"
         run: npm install
       - name: "Setup Python environment"
@@ -650,12 +650,12 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
       - name: "Setup Python environment"
         run: |
           pipx install -f poetry==${{ needs.prepare-environment.outputs.POETRY_VERSION }}
           poetry config virtualenvs.create true --local
-          poetry env use 3.12
+          poetry env use 3.13
       - name: "Install dependencies"
         run: "poetry install --no-interaction --no-ansi"
       - name: "Setup environment"
@@ -765,7 +765,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: 3.13
 
       - name: Install Invoke
         run: pip install invoke toml
@@ -936,7 +936,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Install Invoke
         run: |
@@ -1026,7 +1026,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.13'
       - name: "Setup git credentials"
         run: "git config --global user.name 'Infrahub' && \
               git config --global user.email 'infrahub@opsmill.com' && \
@@ -1036,7 +1036,7 @@ jobs:
       - name: "Setup Python environment"
         run: |
           poetry config virtualenvs.create true --local
-          poetry env use 3.12
+          poetry env use 3.13
       - name: "Install dependencies"
         run: "poetry install --no-interaction --no-ansi"
       - name: Update PATH
