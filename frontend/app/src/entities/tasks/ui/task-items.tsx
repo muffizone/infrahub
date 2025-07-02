@@ -6,6 +6,7 @@ import { Pagination } from "@/shared/components/ui/pagination";
 
 import { QSP } from "@/config/qsp";
 import { GET_TASKS } from "@/entities/tasks/api/getTasksItems";
+import { getObjectDetailsUrl } from "@/entities/nodes/utils";
 import { constructPath } from "@/shared/api/rest/fetch";
 import { DateDisplay } from "@/shared/components/display/date-display";
 import { InlineDisplay } from "@/shared/components/display/inline-display";
@@ -13,6 +14,7 @@ import ErrorScreen from "@/shared/components/errors/error-screen";
 import { Filters } from "@/shared/components/filters/filters";
 import { LoadingIndicator } from "@/shared/components/loading/loading-indicator";
 import { Id } from "@/shared/components/ui/id";
+import { Link } from "@/shared/components/ui/link";
 import { SearchInput, SearchInputProps } from "@/shared/components/ui/search-input";
 import useFilters, { Filter } from "@/shared/hooks/useFilters";
 import { debounce } from "@/shared/utils/common";
@@ -153,7 +155,16 @@ export const TaskItems = forwardRef(({ hideRelatedNode }: TaskItemsProps, ref) =
 
                 if (!item.id) return null;
 
-                return <Id key={item.id} id={item.id} kind={item.kind} preventCopy />;
+                return (
+                  <Link
+                    key={item.id}
+                    to={getObjectDetailsUrl(item.kind, item.id, [
+                      { name: QSP.BRANCH, value: edge.node.branch },
+                    ])}
+                  >
+                    <Id id={item.id} kind={item.kind} preventCopy />
+                  </Link>
+                );
               }}
             />
           ),
